@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>
+	* { box-sizing: border-box; font-family: Arial, Tahoma, sans-serif; }
+	body { color: #1f2937; font-size: 10px; }
+	.letterhead { margin-bottom: 12px; }
+	.letterhead img { max-width: 100%; max-height: 100px; }
+	h1 { color: #0f4c81; font-size: 16px; border-bottom: 3px solid #0f4c81;
+		padding-bottom: 8px; margin-bottom: 6px; }
+	.filters { background: #f8fafc; border: 1px solid #e5e7eb; padding: 5px 8px;
+		margin-bottom: 10px; font-size: 9px; }
+	table.ledger { width: 100%; border-collapse: collapse; }
+	table.ledger th { background: #0f4c81; color: white; font-size: 9px;
+		text-align: left; padding: 6px 4px; }
+	table.ledger td { border-bottom: 1px solid #eef0f2; padding: 5px 4px;
+		font-size: 9px; word-break: break-word; }
+	table.ledger tr:nth-child(even) { background: #f9fafb; }
+	table.ledger .number { text-align: right; }
+	table.amount-words { width: 100%; margin-top: 12px; border-collapse: collapse; }
+	table.amount-words td { background: #f8fafc; border: 1px solid #e5e7eb;
+		padding: 8px 10px; font-size: 9px; }
+	table.amount-words .arabic { direction: rtl; text-align: right; }
+	.letterhead-footer { margin-top: 16px; border-top: 1px solid #e5e7eb;
+		padding-top: 8px; }
+	.generated { color: #6b7280; font-size: 8px; text-align: right; margin-top: 8px; }
+</style></head><body>
+{% if header %}<div class="letterhead">{{ header }}</div>{% endif %}
+<h1>{{ title }}</h1>
+{% if filters %}<div class="filters"><b>Filters:</b>
+{% for label, value in filters %}<span> &nbsp; {{ label }}: {{ value }}</span>{% endfor %}
+</div>{% endif %}
+<table class="ledger"><thead><tr>
+{% for col in columns %}<th class="{{ 'number' if col.numeric else '' }}">{{ col.label }}</th>{% endfor %}
+</tr></thead><tbody>
+{% for row in rows %}<tr>
+{% for cell in row %}<td class="{{ 'number' if columns[loop.index0].numeric else '' }}">{{ cell }}</td>{% endfor %}
+</tr>{% endfor %}
+</tbody></table>
+{% if amount_words_en %}<table class="amount-words"><tr>
+<td><b>Amount in Words:</b> {{ amount_words_en }}</td>
+<td class="arabic"><b>&#1575;&#1604;&#1605;&#1576;&#1604;&#1594; &#1576;&#1575;&#1604;&#1581;&#1585;&#1608;&#1601;:</b> {{ amount_words_ar }}</td>
+</tr></table>{% endif %}
+{% if footer %}<div class="letterhead-footer">{{ footer }}</div>{% endif %}
+<div class="generated">Generated on {{ today }}</div>
+</body></html>

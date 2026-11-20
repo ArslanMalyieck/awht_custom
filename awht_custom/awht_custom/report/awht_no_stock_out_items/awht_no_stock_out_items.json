@@ -1,0 +1,19 @@
+{
+ "doctype": "Report",
+ "name": "AWHT No Stock Out Items",
+ "report_name": "AWHT No Stock Out Items",
+ "module": "AWHT Custom",
+ "creation": "2026-11-18 00:00:00.000000",
+ "modified": "2026-11-18 00:00:00.000000",
+ "modified_by": "Administrator",
+ "owner": "Administrator",
+ "is_standard": "Yes",
+ "report_type": "Script Report",
+ "ref_doctype": "Company",
+ "disabled": 0,
+ "prepared_report": 0,
+ "roles": [
+  {"role": "Accounts Manager"},
+  {"role": "System Manager"}
+ ]
+}

@@ -1,0 +1,4 @@
+[pre_model_sync]
+
+[post_model_sync]
+awht_custom.patches.v1.disable_legacy_client_scripts
