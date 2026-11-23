@@ -42,7 +42,9 @@ class TestAppSetup(unittest.TestCase):
         self.assertNotIn("Sales Invoice", fields)
         self.assertEqual({field["fieldname"] for field in fields["Stock Entry Detail"]}, {"salesman_price"})
         self.assertEqual({field["fieldname"] for field in fields["Sales Invoice Item"]},
-                         {"item_tax_amount", "amount_after_tax"})
+                         {"salesman_price", "item_tax_amount", "amount_after_tax"})
+        self.assertEqual({field["fieldname"] for field in fields["Quotation Item"]}, {"salesman_price"})
+        self.assertEqual({field["fieldname"] for field in fields["Sales Order Item"]}, {"salesman_price"})
         self.assertEqual(get_doc.call_args.args[0]["role_name"], "Previous Transfer Prices Viewer")
         get_doc.return_value.insert.assert_called_once_with(ignore_permissions=True)
 

@@ -23,6 +23,12 @@ CUSTOM_FIELDS = {
     ],
     "Sales Invoice Item": [
         {
+            "fieldname": "salesman_price", "label": "Salesman Price",
+            "fieldtype": "Currency", "options": "Company:company:default_currency",
+            "insert_after": "rate", "read_only": 1, "non_negative": 1,
+            "in_list_view": 1, "columns": 1, "no_copy": 1,
+        },
+        {
             "fieldname": "item_tax_amount", "label": "Item Tax Amount",
             "fieldtype": "Currency", "options": "currency",
             "insert_after": "net_amount", "read_only": 1, "no_copy": 1,
@@ -33,6 +39,22 @@ CUSTOM_FIELDS = {
             "fieldtype": "Currency", "options": "currency",
             "insert_after": "item_tax_amount", "read_only": 1, "no_copy": 1,
             "in_list_view": 1, "columns": 1, "print_hide": 1,
+        },
+    ],
+    "Quotation Item": [
+        {
+            "fieldname": "salesman_price", "label": "Salesman Price",
+            "fieldtype": "Currency", "options": "Company:company:default_currency",
+            "insert_after": "rate", "read_only": 1, "non_negative": 1,
+            "in_list_view": 1, "columns": 1, "no_copy": 1,
+        },
+    ],
+    "Sales Order Item": [
+        {
+            "fieldname": "salesman_price", "label": "Salesman Price",
+            "fieldtype": "Currency", "options": "Company:company:default_currency",
+            "insert_after": "rate", "read_only": 1, "non_negative": 1,
+            "in_list_view": 1, "columns": 1, "no_copy": 1,
         },
     ],
     "Branch": [
@@ -51,7 +73,37 @@ CUSTOM_FIELDS = {
 }
 
 
+SALESMAN_PRICE_DOCTYPES = ("Sales Invoice Item", "Quotation Item", "Sales Order Item")
+
+
+def _normalize_salesman_price_columns():
+    """Allow existing varchar/blank price columns to be adopted as Currency fields."""
+    has_column = getattr(frappe.db, "has_column", None)
+    if not has_column:
+        return
+    for doctype in SALESMAN_PRICE_DOCTYPES:
+        if not has_column(doctype, "salesman_price"):
+            continue
+        if frappe.get_meta(doctype).get_field("salesman_price"):
+            continue
+        column = frappe.db.sql(
+            f"show columns from `tab{doctype}` like 'salesman_price'", as_dict=True
+        )
+        if not column:
+            continue
+        column_type = (column[0].get("Type") or "").lower()
+        if "char" in column_type or "text" in column_type:
+            condition = (
+                "salesman_price is null or trim(salesman_price) = '' "
+                "or salesman_price not regexp '^-?[0-9]+([.][0-9]+)?$'"
+            )
+        else:
+            condition = "salesman_price is null"
+        frappe.db.sql(f"update `tab{doctype}` set salesman_price = 0 where {condition}")
+
+
 def setup():
+    _normalize_salesman_price_columns()
     missing = {}
     for doctype, fields in CUSTOM_FIELDS.items():
         meta = frappe.get_meta(doctype)
