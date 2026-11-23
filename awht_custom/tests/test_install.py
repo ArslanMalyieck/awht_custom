@@ -40,7 +40,8 @@ class TestAppSetup(unittest.TestCase):
         fields = create_fields.call_args.args[0]
         self.assertEqual(create_fields.call_args.kwargs, {"update": False})
         self.assertNotIn("Sales Invoice", fields)
-        self.assertEqual({field["fieldname"] for field in fields["Stock Entry Detail"]}, {"salesman_price"})
+        self.assertEqual({field["fieldname"] for field in fields["Stock Entry Detail"]}, {"salesman_price", "old_price"})
+        self.assertEqual({field["fieldname"] for field in fields["Material Request Item"]}, {"salesman_price", "old_price"})
         self.assertEqual({field["fieldname"] for field in fields["Sales Invoice Item"]},
                          {"salesman_price", "item_tax_amount", "amount_after_tax"})
         self.assertEqual({field["fieldname"] for field in fields["Quotation Item"]}, {"salesman_price"})
