@@ -231,6 +231,17 @@ frappe.ui.form.on('Sales Invoice', {
     }
 });
 
+frappe.ui.form.on('Sales Invoice', {
+    customer(frm) {
+        apply_tax_template(frm);
+        apply_debit_to(frm);
+        apply_item_accounts(frm);
+    },
+    custom_branch(frm) {
+        bind_customer_branch_filter(frm);
+    },
+});
+
 /* -------------------------------------------------------
    Show / Hide Tables
 --------------------------------------------------------*/
@@ -250,7 +261,7 @@ function toggle_tables(frm) {
    Auto VAT Template
 --------------------------------------------------------*/
 function apply_tax_template(frm) {
-    if (!frm.doc.custom_branch || !frm.doc.company) return;
+    if (!frm.doc.custom_branch || !frm.doc.company || !frm.doc.customer) return;
 
     const branch_norm = normalize(frm.doc.custom_branch);
 
@@ -540,19 +551,22 @@ function apply_item_filter_sales(frm, userPermissions) {
 --------------------------------------------------------*/
 function bind_customer_branch_filter(frm, branches) {
     get_user_branch_permissions().then(({ branches }) => {
-        if (!branches || !branches.length) return;
-
         // retry if field not ready
         if (!frm.fields_dict.customer) {
             setTimeout(() => bind_customer_branch_filter(frm, branches), 100);
             return;
         }
 
-        frm.fields_dict.customer.get_query = function () {
-            return {
-                filters: { custom_branch: ["in", branches] }
-            };
-        };
+        // For users without Branch User Permission, filter by the branch
+        // selected on this invoice instead of showing all customers.
+        const allowed = (branches && branches.length)
+            ? branches
+            : (frm.doc.custom_branch ? [frm.doc.custom_branch] : []);
+        if (!allowed.length) return;
+
+        frm.set_query("customer", () => ({
+            filters: { custom_branch: ["in", allowed] }
+        }));
     });
 }
 
