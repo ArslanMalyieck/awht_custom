@@ -2,6 +2,16 @@
 const AWHT_ITEM_TAX_PREVIEW = "awht_custom.operations.invoice_tax.preview_item_taxes";
 const AWHT_BRANCH_WAREHOUSE = "awht_custom.operations.invoice_branch.get_branch_warehouse";
 
+if (typeof erpnext !== "undefined" && erpnext.utils && erpnext.utils.set_taxes && !erpnext.utils._awht_missing_party_guard) {
+    const awht_set_taxes = erpnext.utils.set_taxes;
+    erpnext.utils.set_taxes = function (frm, ...args) {
+        const party = frm.doc.customer || frm.doc.supplier || frm.doc.lead || frm.doc.party_name;
+        if (!party) return Promise.resolve();
+        return awht_set_taxes.call(this, frm, ...args);
+    };
+    erpnext.utils._awht_missing_party_guard = true;
+}
+
 function awht_has_native_item_tax_details() {
 	return Boolean(frappe.boot && frappe.boot.awht_native_item_wise_tax_details);
 }
@@ -237,9 +247,6 @@ frappe.ui.form.on('Sales Invoice', {
         apply_debit_to(frm);
         apply_item_accounts(frm);
     },
-    custom_branch(frm) {
-        bind_customer_branch_filter(frm);
-    },
 });
 
 /* -------------------------------------------------------
@@ -444,6 +451,10 @@ frappe.ui.form.on('Sales Invoice', {
 
     refresh(frm) {
         init_sales_invoice_filters(frm);
+    },
+
+    custom_branch(frm) {
+        bind_customer_branch_filter(frm);
     }
 });
 
