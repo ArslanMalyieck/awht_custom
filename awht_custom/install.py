@@ -84,10 +84,44 @@ CUSTOM_FIELDS = {
             "non_negative": 1, "insert_after": "branch",
         },
     ],
+    "Address": [
+        {
+            "fieldname": "additional_number", "label": "Additional Number",
+            "fieldtype": "Data", "insert_after": "address_line2",
+        },
+        {
+            "fieldname": "street_name", "label": "Street Name",
+            "fieldtype": "Data", "insert_after": "additional_number",
+        },
+    ],
+    "Customer": [
+        {
+            "fieldname": "phone_number", "label": "Phone Number",
+            "fieldtype": "Data", "insert_after": "customer_group",
+        },
+    ],
+    "POS Invoice": [
+        {
+            "fieldname": "custom_branch", "label": "Branch",
+            "fieldtype": "Link", "options": "Branch", "insert_after": "return_against",
+        },
+        {
+            "fieldname": "update_stock", "label": "Update Stock",
+            "fieldtype": "Check", "insert_after": "items_section",
+        },
+    ],
     "Sales Invoice": [
         {
             "fieldname": "custom_branch", "label": "Branch",
             "fieldtype": "Link", "options": "Branch", "insert_after": "company",
+        },
+        {
+            "fieldname": "company_cr", "label": "Company CR",
+            "fieldtype": "Data", "read_only": 1, "insert_after": "tax_id",
+        },
+        {
+            "fieldname": "custom_customer_cr", "label": "Customer CR",
+            "fieldtype": "Data", "read_only": 1, "insert_after": "company_cr",
         },
     ],
 }
