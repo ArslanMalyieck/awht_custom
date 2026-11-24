@@ -4,14 +4,10 @@ Consolidation of four local ERPNext app working trees: `ar_pdf_export`,
 `awht_customizations`, `branch_credit_control`, and `cost_visibility`.
 The live production origin is `https://awht.metadaftr.com/`.
 
-**Release status: not production-ready. Do not install on the live server yet.**
-The copied apps do not include the live server's complete DocField/Custom Field
-definitions or its ERPNext core patches. The current code targets the local
-Frappe 16.27.1 / ERPNext 16.28.0 bench (Python 3.14.6); live version and
-field/data mappings must be verified before any upgrade. It has **not** been
-installed on the local `localhost` site, which still runs the original
-`cost_visibility` app. The three other copied source apps are inactive on that
-local site. None of the four source working trees was edited by this merge.
+**Publisher:** Arslan  
+**Contact:** `malikarsaln000009@gmail.com`
+
+**Status: installed and verified on the local v15 site (`erpnext15.localhost`) against a restored live backup. Do not install on the live production server until the exact-version clone/cutover approval is complete.** The four source apps are inactive on the local site after the `awht_custom` hand-off. Live production still runs its original apps and must be backed up and rehearsed before any uninstall.
 
 ## Feature Inventory
 
@@ -28,6 +24,7 @@ local site. None of the four source working trees was edited by this merge.
 | Branch invoice warehouse mapping | Explicit, company-scoped Branch/Warehouse mapping; only opt-in invoices, no fuzzy match | Live Branch field names and return behavior must be checked; mappings must be loaded before activation |
 | Stock Entry branch credit check | Optional per-company policy with row-summed transfer gate and shared lock | Disabled until configured; **do not cut over** if old live gate is active until policy/mappings/limits match live behavior |
 | Material Request credit preview/submit | Optional permission-checked preview and submit validation using provisional stock value | Preview is **not** a reservation and cannot promise future headroom |
+| Stock Reconciliation assistant | Duplicate item merge, persistent memory for changed/unchanged rows, remaining-items fetch by warehouse/date range, and qty-preserving posting-date changes | Memory is generated only by the app; manual create/edit/delete is blocked. Draft/delete/cancel lifecycle must be respected |
 | Branch Financial Exposure | Original report ported under its original name and `AWHT Custom` module; company/branch scoped with original sales, payments and gross-profit metrics | Amounts use company-currency base fields; the interim `AWHT Current Credit Exposure` remains available |
 | Unsold Items | Original report ported under its original name and `AWHT Custom` module; company/warehouse scoped with all original movement sources and filters | The interim `AWHT No Stock Out Items` remains available |
 | Sales Invoice salesman-price floor | Original app's check is commented out; no new enforcement | Live ERPNext v15 core patch and actual price-floor policy must be obtained before deciding |
@@ -59,16 +56,28 @@ populate credit mappings or enable a policy from warehouse-name guesses.
 
 ## Local Verification
 
-Pure/mock tests from the app directory:
+Canonical suite on the restored-live v15 site:
+
+```bash
+bench --site erpnext15.localhost run-tests --app awht_custom
+```
+
+Source-tree/pure-test command (uses the separate v16 bench environment):
 
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /home/arslan/frappe-bench/env/bin/python \
     -m unittest discover -s awht_custom/tests -q
 ```
 
-Latest result (2026-11-20, v15 site): **285 tests, OK, two site-dependent skips**. Client
-JavaScript harnesses and syntax checks pass. No new app was installed on the
-working `localhost` site.
+The two commands use different benches. Use the v15 site command for the
+current restored-live test site; the standalone path above is kept for the
+original v16 source-tree environment.
+
+Latest result (2026-11-24, v15 site): **296 tests, OK, two site-dependent skips**. Client
+JavaScript harnesses and syntax checks pass. The merged Stock Reconciliation
+assistant was exercised on `Testing - AWH`: a saved draft with one changed and
+one unchanged row produced two memory rows, and the Memory rows were excluded
+from the next remaining-items fetch.
 
 An isolated sibling-bench test restored a fresh read-only snapshot of local
 `localhost` into private socket-only MariaDB and Redis, without web, workers,

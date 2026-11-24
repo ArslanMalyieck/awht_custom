@@ -1,8 +1,8 @@
 app_name = "awht_custom"
 app_title = "AWHT Custom"
-app_publisher = "AWHT"
+app_publisher = "Arslan"
 app_description = "Consolidated AWHT operations for ERPNext"
-app_email = "admin@example.invalid"
+app_email = "malikarsaln000009@gmail.com"
 app_license = "MIT"
 
 required_apps = ["erpnext"]

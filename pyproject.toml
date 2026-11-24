@@ -4,6 +4,7 @@ description = "Consolidated AWHT operational customizations for ERPNext"
 readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
+authors = [{name = "Arslan", email = "malikarsaln000009@gmail.com"}]
 dependencies = []
 
 [build-system]
