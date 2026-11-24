@@ -388,10 +388,7 @@ function apply_item_accounts(frm) {
             return;
         }
 
-        // ERPNext sets item defaults asynchronously after item selection. Delay
-        // this override just like the original client script so the branch
-        // accounts win over the item's default accounts.
-        setTimeout(() => {
+        const apply_accounts = () => {
             (frm.doc.items || []).forEach(row => {
                 if (income_acc) {
                     frappe.model.set_value(row.doctype, row.name, 'income_account', income_acc.name);
@@ -401,6 +398,16 @@ function apply_item_accounts(frm) {
                 }
             });
             frm.refresh_field('items');
+        };
+
+        // ERPNext can set item defaults more than once (item details, stock
+        // valuation and tax recalculation). Re-apply after those callbacks.
+        apply_accounts();
+        clearTimeout(frm.__awht_account_timer);
+        clearTimeout(frm.__awht_account_timer_2);
+        frm.__awht_account_timer = setTimeout(() => {
+            apply_accounts();
+            frm.__awht_account_timer_2 = setTimeout(apply_accounts, 650);
         }, 250);
     });
 }
