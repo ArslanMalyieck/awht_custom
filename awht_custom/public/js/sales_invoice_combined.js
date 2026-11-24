@@ -360,24 +360,48 @@ function apply_item_accounts(frm) {
             ['company', '=', frm.doc.company],
             ['is_group', '=', 0]
         ],
-        fields: ['name', 'account_name', 'root_type'],
+        fields: ['name', 'account_name', 'root_type', 'account_type'],
         limit: 500
     }).then(accounts => {
-        const income_acc = accounts.find(a =>
-            a.root_type === 'Income' && normalize(a.account_name).includes(branch_norm)
-        );
+        const pick = (root_type, preferred_types) => {
+            const matches = accounts.filter(a =>
+                a.root_type === root_type &&
+                a.account_name &&
+                normalize(a.account_name).includes(branch_norm)
+            );
+            matches.sort((a, b) => {
+                const a_rank = preferred_types.indexOf(a.account_type);
+                const b_rank = preferred_types.indexOf(b.account_type);
+                if ((a_rank < 0 ? 99 : a_rank) !== (b_rank < 0 ? 99 : b_rank)) {
+                    return (a_rank < 0 ? 99 : a_rank) - (b_rank < 0 ? 99 : b_rank);
+                }
+                return normalize(a.account_name).length - normalize(b.account_name).length;
+            });
+            return matches[0] || null;
+        };
 
-        const expense_acc = accounts.find(a =>
-            a.root_type === 'Expense' && normalize(a.account_name).includes(branch_norm)
-        );
+        const income_acc = pick('Income', ['Income Account']);
+        const expense_acc = pick('Expense', ['Cost of Goods Sold']);
 
-        if (!income_acc && !expense_acc) return;
+        if (!income_acc && !expense_acc) {
+            console.warn('No branch income/expense accounts found for:', frm.doc.custom_branch);
+            return;
+        }
 
-        frm.doc.items.forEach(row => {
-            if (income_acc) frappe.model.set_value(row.doctype, row.name, 'income_account', income_acc.name);
-            if (expense_acc) frappe.model.set_value(row.doctype, row.name, 'expense_account', expense_acc.name);
-        });
-        frm.refresh_field('items');
+        // ERPNext sets item defaults asynchronously after item selection. Delay
+        // this override just like the original client script so the branch
+        // accounts win over the item's default accounts.
+        setTimeout(() => {
+            (frm.doc.items || []).forEach(row => {
+                if (income_acc) {
+                    frappe.model.set_value(row.doctype, row.name, 'income_account', income_acc.name);
+                }
+                if (expense_acc) {
+                    frappe.model.set_value(row.doctype, row.name, 'expense_account', expense_acc.name);
+                }
+            });
+            frm.refresh_field('items');
+        }, 250);
     });
 }
 
