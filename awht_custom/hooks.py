@@ -29,7 +29,7 @@ doctype_js = {
     "Quotation": "public/js/legacy_quotation.js",
     "Request for Quotation": "public/js/legacy_request_for_quotation.js",
     "Sales Order": "public/js/legacy_sales_order.js",
-    "Stock Reconciliation": "public/js/legacy_stock_reconciliation.js",
+    "Stock Reconciliation": "public/js/stock_reconciliation_combined.js",
     "Supplier Quotation": "public/js/legacy_supplier_quotation.js",
 }
 
@@ -44,6 +44,14 @@ doc_events = {
         "before_validate": "awht_custom.credit_control.invoice.map_invoice_branch_warehouse",
         "validate": "awht_custom.operations.invoice_tax.set_item_tax_display",
         "onload": "awht_custom.operations.invoice_tax.set_item_tax_display",
+    },
+    "Stock Reconciliation": {
+        "before_validate": "awht_custom.stock_recon.memory.capture_items",
+        "after_insert": "awht_custom.stock_recon.memory.sync_memory",
+        "on_update": "awht_custom.stock_recon.memory.sync_memory",
+        "on_submit": "awht_custom.stock_recon.memory.sync_memory",
+        "on_cancel": "awht_custom.stock_recon.memory.delete_memory",
+        "on_trash": "awht_custom.stock_recon.memory.delete_memory",
     },
 }
 
