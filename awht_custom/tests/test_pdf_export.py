@@ -415,7 +415,8 @@ class TestBrandedReportPDF(unittest.TestCase):
             self.export()
         self.runner.return_value = {
             "columns": self.result["columns"],
-            "result": [{"entry": "X" * 2001}] * 1000,
+            "result": [{"entry": "X" * 2001}]
+            * (pdf.MAX_RENDERED_CELLS_LENGTH // 2001 + 1),
         }
         with self.assertRaises(frappe.ValidationError):
             self.export()
