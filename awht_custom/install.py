@@ -169,13 +169,9 @@ def setup():
         for field in fields:
             existing = meta.get_field(field["fieldname"])
             if existing:
-                if existing.fieldtype != field["fieldtype"] or (
-                    field["fieldtype"] == "Link" and existing.options != field["options"]
-                ):
-                    frappe.throw(
-                        f"Existing {doctype}.{field['fieldname']} is incompatible with AWHT Custom. "
-                        "Review the original field and its data before migration."
-                    )
+                # Never override or fail on a field that already exists on the
+                # target site, even if its type/options differ from our default.
+                # The site's schema remains the source of truth.
                 continue
             missing.setdefault(doctype, []).append({**field, "module": "AWHT Custom"})
     if missing:

@@ -37,9 +37,12 @@ Report role checks and the Cost Visibility filter.
 
 ## Site Setup
 
-`awht_custom/install.py` adds only missing fields/roles and fails on an
-incompatible existing field. It never overwrites a site's existing field or
-imports Cost Visibility settings as fixtures. It creates:
+`awht_custom/install.py` adds only missing fields/roles. Any field already
+present on the target site is skipped untouched, even if its type, options or
+custom-field ownership differs from the app's default, so installing alongside
+existing production customization does not overwrite or conflict with it. It
+never overwrites a site's existing field or imports Cost Visibility settings as
+fixtures. It creates:
 
 - `Stock Entry Detail.salesman_price` when absent.
 - `Sales Invoice Item.item_tax_amount` and `amount_after_tax` when absent.

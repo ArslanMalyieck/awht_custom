@@ -76,14 +76,17 @@ class TestAppSetup(unittest.TestCase):
             else:
                 clear_cache.assert_not_called()
 
-    def test_incompatible_existing_field_fails_closed(self):
+    def test_existing_field_is_skipped_even_when_incompatible(self):
         def get_meta(doctype):
             return SimpleNamespace(get_field=lambda field: SimpleNamespace(fieldtype="Data", options=None)
                                    if doctype == "Stock Entry Detail" and field == "salesman_price" else None)
 
+        db = SimpleNamespace(exists=MagicMock(return_value=False))
         with patch.object(install.frappe, "get_meta", side_effect=get_meta), \
-             patch.object(install.frappe, "throw", side_effect=frappe.ValidationError), \
+             patch.object(install.frappe, "db", db), \
+             patch.object(install.frappe, "get_doc") as get_doc, \
              patch.object(install, "create_custom_fields") as create_fields:
-            with self.assertRaises(frappe.ValidationError):
-                install.setup()
-        create_fields.assert_not_called()
+            install.setup()
+        fields = create_fields.call_args.args[0]["Stock Entry Detail"]
+        self.assertEqual({field["fieldname"] for field in fields}, {"old_price"})
+        get_doc.return_value.insert.assert_called_once_with(ignore_permissions=True)
