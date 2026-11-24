@@ -268,7 +268,7 @@ function toggle_tables(frm) {
    Auto VAT Template
 --------------------------------------------------------*/
 function apply_tax_template(frm) {
-    if (!frm.doc.custom_branch || !frm.doc.company || !frm.doc.customer) return;
+    if (!frm.doc.custom_branch || !frm.doc.company) return;
 
     const branch_norm = normalize(frm.doc.custom_branch);
 
@@ -277,8 +277,12 @@ function apply_tax_template(frm) {
         fields: ['name'],
         limit: 200
     }).then(templates => {
-        // find template where normalized name contains normalized branch + AWH
-        const template = templates.find(t => normalize(t.name).includes(branch_norm) && normalize(t.name).includes('awh'));
+        // Prefer the shortest branch-specific company template. This avoids
+        // selecting "Khamis Mashit Van" for the "Khamis Mashit" branch when
+        // both names match the branch text.
+        const template = templates
+            .filter(t => normalize(t.name).includes(branch_norm) && normalize(t.name).includes('awh'))
+            .sort((a, b) => normalize(a.name).length - normalize(b.name).length)[0];
 
         if (!template) {
             frappe.msgprint({
