@@ -29,6 +29,10 @@ frappe.ui.form.on('Sales Order', {
         setup_branch_permission_filters(frm); // cheap, uses cache
     },
 
+    onload_post_render(frm) {
+        apply_item_filter(frm);
+    },
+
     custom_branch(frm) {
     toggle_customer_lock(frm);
     toggle_tables(frm);
@@ -283,20 +287,15 @@ function apply_item_filter(frm) {
             return { filters: { name: ['=', '__none__'] } };
         }
 
-        const branch_norm = normalize(branch);
-        const filters = {};
-
-        // This SO's branch is NOT Head Office -> hide head-office-only items
-        if (!branch_norm.includes('headoffice')) {
-            filters.custom_is_head_office_only = 0;
-        }
-
-        // This SO's branch is NOT Khamis Mashit -> hide khamis-only items
-        if (!branch_norm.includes('khamismashit')) {
-            filters.custom_is_khamis_only = 0;
-        }
-
-        return { filters };
+        return {
+            query: 'erpnext.controllers.queries.item_query',
+            filters: {
+                is_sales_item: 1,
+                customer: frm.doc.customer,
+                has_variants: 0,
+                ...awht_custom_item_branch_filters(branch),
+            }
+        };
     });
 }
 

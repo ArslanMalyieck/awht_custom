@@ -509,6 +509,10 @@ frappe.ui.form.on('Sales Invoice', {
         init_sales_invoice_filters(frm);
     },
 
+    onload_post_render(frm) {
+        apply_item_filter_sales(frm);
+    },
+
     custom_branch(frm) {
         apply_item_filter_sales(frm);
         bind_customer_branch_filter(frm);
@@ -519,6 +523,9 @@ frappe.ui.form.on('Sales Invoice', {
    Init (Refresh Safe)
 --------------------------------------------------------*/
 function init_sales_invoice_filters(frm) {
+    apply_item_filter_sales(frm);
+    setTimeout(() => apply_item_filter_sales(frm), 300);
+
     frappe.after_ajax(() => {
         setup_sales_invoice_filters(frm);
     });
@@ -590,7 +597,13 @@ function set_default_head_office_branch(frm, branches) {
 --------------------------------------------------------*/
 function apply_item_filter_sales(frm) {
     frm.set_query('item_code', 'items', () => ({
-        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+        query: 'erpnext.controllers.queries.item_query',
+        filters: {
+            is_sales_item: 1,
+            customer: frm.doc.customer,
+            has_variants: 0,
+            ...awht_custom_item_branch_filters(frm.doc.custom_branch),
+        }
     }));
 }
 

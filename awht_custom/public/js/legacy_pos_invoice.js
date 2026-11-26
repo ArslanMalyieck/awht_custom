@@ -12,6 +12,10 @@ frappe.ui.form.on('POS Invoice', {
         setup_pos_filters(frm);
     },
 
+    onload_post_render(frm) {
+        apply_item_filter(frm);
+    },
+
     custom_branch(frm) {
         setup_pos_filters(frm);
     }
@@ -60,7 +64,15 @@ function get_user_branch_permissions() {
 --------------------------------------------------------*/
 function apply_item_filter(frm) {
     frm.set_query('item_code', 'items', () => ({
-        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+        query: 'erpnext.accounts.doctype.pos_invoice.pos_invoice.item_query',
+        filters: {
+            has_variants: ['=', 0],
+            is_sales_item: ['=', 1],
+            disabled: ['=', 0],
+            is_fixed_asset: ['=', 0],
+            pos_profile: ['=', frm.doc.pos_profile],
+            ...awht_custom_item_branch_filters(frm.doc.custom_branch),
+        }
     }));
 }
 

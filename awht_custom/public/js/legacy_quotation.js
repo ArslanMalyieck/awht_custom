@@ -28,6 +28,10 @@ frappe.ui.form.on('Quotation', {
         init(frm);
     },
 
+    onload_post_render(frm) {
+        apply_item_filter(frm);
+    },
+
     custom_branch(frm) {
         handle_branch_change(frm);
     },
@@ -84,6 +88,8 @@ frappe.ui.form.on('Quotation Item', {
 function init(frm) {
 
     toggle_tables(frm);
+    apply_item_filter(frm);
+    setTimeout(() => apply_item_filter(frm), 300);
 
     frappe.after_ajax(() => {
 
@@ -224,7 +230,13 @@ function set_default_branch(frm, branches) {
 function apply_item_filter(frm) {
 
     frm.set_query('item_code', 'items', () => ({
-        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+        query: 'erpnext.controllers.queries.item_query',
+        filters: {
+            is_sales_item: 1,
+            has_variants: 0,
+            ...(frm.doc.customer ? { customer: frm.doc.customer } : {}),
+            ...awht_custom_item_branch_filters(frm.doc.custom_branch),
+        }
     }));
 }
 
