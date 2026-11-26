@@ -392,6 +392,19 @@ class TestBrandedReportPDF(unittest.TestCase):
         with self.assertRaisesRegex(frappe.ValidationError, "precision"):
             self.export(only_fields=["amount"], words_column="amount")
 
+    def test_auto_amount_words_skips_when_currency_metadata_is_unavailable(self):
+        self.runner.return_value = {
+            "columns": [
+                {"label": "Amount", "fieldname": "amount", "fieldtype": "Currency",
+                 "options": "currency"},
+            ],
+            "result": [{"amount": "10.00"}],
+        }
+        html = self.export(only_fields=["amount"], words_column="__auto__")
+        self.assertIsNotNone(html)
+        self.get_pdf.assert_called_once()
+        self.assertNotIn("Ten Saudi Riyals", html)
+
     def test_sar_zero_and_fractional_amounts_have_currency_words_in_both_languages(self):
         self.runner.return_value = {
             "columns": [{"label": "Amount", "fieldname": "amount", "fieldtype": "Currency",

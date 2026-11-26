@@ -474,9 +474,14 @@ def _render_report_pdf(
         if not isinstance(row, (Mapping, list, tuple)):
             frappe.throw("Invalid report row", frappe.ValidationError)
 
-    amount_en, amount_ar, words_index = _amount_words(
-        selected, normalized, rows, filters, words_column, words_mode, has_total_row
-    )
+    try:
+        amount_en, amount_ar, words_index = _amount_words(
+            selected, normalized, rows, filters, words_column, words_mode, has_total_row
+        )
+    except frappe.ValidationError:
+        if words_column != "__auto__":
+            raise
+        amount_en, amount_ar, words_index = "", "", None
     rendered_columns = [
         {"label": escape(str(col.get("label") or col["fieldname"]), quote=True),
          "numeric": col.get("fieldtype") in ("Currency", "Float", "Int")}
