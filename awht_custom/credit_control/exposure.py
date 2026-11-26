@@ -64,11 +64,14 @@ def get_stock_values(company, mappings, *, for_update=False):
         {"company": company, "warehouses": tuple(warehouses)},
         as_dict=True,
     )
+    warehouse_totals = {warehouse: Decimal(0) for warehouse in warehouses}
     for row in rows:
-        value = amount(row.stock_value)
+        warehouse_totals[row.warehouse] += amount(row.stock_value)
+
+    for warehouse, value in warehouse_totals.items():
         if value < 0:
             frappe.throw(_("Negative stock value in a mapped warehouse; exposure is unavailable."))
-        totals[warehouses[row.warehouse]] += value
+        totals[warehouses[warehouse]] += value
     return totals
 
 

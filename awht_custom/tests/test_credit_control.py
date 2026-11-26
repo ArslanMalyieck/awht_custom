@@ -906,6 +906,21 @@ class TestCreditControl(unittest.TestCase):
         with self.assertRaisesRegex(ValidationError, "unsupported branch, currency or return"):
             self.financial.execute({"company": "C1"})
 
+    def test_negative_bin_rows_are_net_at_warehouse_level(self):
+        self.db.bins = [
+            Record(warehouse="WH1", stock_value=-30),
+            Record(warehouse="WH1", stock_value=100),
+        ]
+        _, data = self.financial.execute({"company": "C1"})
+        self.assertEqual(data[0]["stock_value"], 70)
+
+        self.db.bins = [
+            Record(warehouse="WH1", stock_value=-80),
+            Record(warehouse="WH1", stock_value=70),
+        ]
+        with self.assertRaisesRegex(ValidationError, "Negative stock value"):
+            self.financial.execute({"company": "C1"})
+
     def test_reports_fail_on_pending_pos_or_non_sar_financials(self):
         self.db.pending_pos.add("C1")
         with self.assertRaisesRegex(ValidationError, "Consolidate pending POS"):
