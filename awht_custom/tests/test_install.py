@@ -16,6 +16,8 @@ class TestAppSetup(unittest.TestCase):
                          "awht_custom.credit_control.stock_entry.validate_stock_entry")
         self.assertEqual(hooks.doc_events["Sales Invoice"]["before_validate"],
                          "awht_custom.credit_control.invoice.map_invoice_branch_warehouse")
+        self.assertIn("awht_custom.operations.invoice_accounts.set_branch_item_expense_account",
+                      hooks.doc_events["Sales Invoice"]["validate"])
         self.assertEqual(hooks.override_whitelisted_methods["frappe.desk.query_report.run"],
                          "awht_custom.visibility.report_filter.run")
         self.assertEqual(hooks.override_whitelisted_methods[
@@ -41,6 +43,9 @@ class TestAppSetup(unittest.TestCase):
         self.assertEqual(create_fields.call_args.kwargs, {"update": False})
         self.assertEqual({field["fieldname"] for field in fields["Address"]}, {"additional_number", "street_name"})
         self.assertEqual({field["fieldname"] for field in fields["Customer"]}, {"phone_number"})
+        self.assertEqual({field["fieldname"] for field in fields["Item"]},
+                         {"custom_is_head_office_only", "custom_is_khamis_only"})
+        self.assertEqual({field["fieldname"] for field in fields["Payment Entry"]}, {"custom_branch"})
         self.assertEqual({field["fieldname"] for field in fields["POS Invoice"]}, {"custom_branch", "update_stock"})
         self.assertEqual({field["fieldname"] for field in fields["Sales Invoice"]}, {"company_cr", "custom_customer_cr"})
         self.assertEqual({field["fieldname"] for field in fields["Stock Entry Detail"]}, {"salesman_price", "old_price"})

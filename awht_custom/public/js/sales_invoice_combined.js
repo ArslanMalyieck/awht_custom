@@ -350,6 +350,7 @@ function apply_debit_to(frm) {
    Auto Income & Expense Accounts for Items
 --------------------------------------------------------*/
 function apply_item_accounts(frm) {
+    if ((frm.doc.docstatus || 0) !== 0) return;
     if (!frm.doc.custom_branch || !frm.doc.company) return;
     if (!frm.doc.items || !frm.doc.items.length) return;
 
@@ -382,6 +383,11 @@ function apply_item_accounts(frm) {
 
         const income_acc = pick('Income', ['Income Account']);
         const expense_acc = pick('Expense', ['Cost of Goods Sold']);
+
+        frm.__awht_branch_expense_account = expense_acc ? expense_acc.name : null;
+        frm.set_query('expense_account', 'items', () => ({
+            filters: expense_acc ? { name: ['in', [expense_acc.name]] } : {}
+        }));
 
         if (!income_acc && !expense_acc) {
             console.warn('No branch income/expense accounts found for:', frm.doc.custom_branch);
@@ -419,6 +425,21 @@ frappe.ui.form.on('Sales Invoice Item', {
     item_code(frm, cdt, cdn) {
         // wait a bit to ensure row exists
         setTimeout(() => apply_item_accounts(frm), 100);
+    },
+
+    expense_account(frm, cdt, cdn) {
+        const expected = frm.__awht_branch_expense_account;
+        if ((frm.doc.docstatus || 0) !== 0 || !expected || frm.__awht_setting_expense_account) return;
+
+        const row = locals[cdt][cdn];
+        if (!row || row.expense_account === expected) return;
+
+        frm.__awht_setting_expense_account = true;
+        Promise.resolve(frappe.model.set_value(cdt, cdn, 'expense_account', expected))
+            .catch(() => {})
+            .finally(() => {
+                frm.__awht_setting_expense_account = false;
+            });
     }
 });
 
@@ -489,6 +510,7 @@ frappe.ui.form.on('Sales Invoice', {
     },
 
     custom_branch(frm) {
+        apply_item_filter_sales(frm);
         bind_customer_branch_filter(frm);
     }
 });
@@ -508,7 +530,7 @@ function init_sales_invoice_filters(frm) {
 function setup_sales_invoice_filters(frm) {
     get_user_branch_permissions().then(userPermissions => {
         set_default_head_office_branch(frm, userPermissions.branches);
-        apply_item_filter_sales(frm, userPermissions);
+        apply_item_filter_sales(frm);
         bind_customer_branch_filter(frm, userPermissions.branches);
     });
 }
@@ -566,30 +588,10 @@ function set_default_head_office_branch(frm, branches) {
 /* -------------------------------------------------------
    Item Visibility Filter
 --------------------------------------------------------*/
-function apply_item_filter_sales(frm, userPermissions) {
-    const { branches } = userPermissions;
-
-    frm.set_query('item_code', 'items', () => {
-        // 1️⃣ User has no branch restrictions = show all items
-        if (!branches || branches.length === 0) {
-            return {};
-        }
-
-        // 2️⃣ User has some branch restrictions, hide items not allowed
-        const filters = {};
-
-        // Head Office
-        if (!branches.some(b => normalize(b).includes('headoffice'))) {
-            filters.custom_is_head_office_only = 0;
-        }
-
-        // KHAMIS MASHIT / KHAMIS MASHIT VAN
-        if (!branches.some(b => normalize(b).includes('khamismashit'))) {
-            filters.custom_is_khamis_only = 0;
-        }
-
-        return { filters };
-    });
+function apply_item_filter_sales(frm) {
+    frm.set_query('item_code', 'items', () => ({
+        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+    }));
 }
 
 /* -------------------------------------------------------

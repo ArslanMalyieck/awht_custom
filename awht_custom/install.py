@@ -100,6 +100,26 @@ CUSTOM_FIELDS = {
             "fieldtype": "Data", "insert_after": "customer_group",
         },
     ],
+    "Payment Entry": [
+        {
+            "fieldname": "custom_branch", "label": "Branch",
+            "fieldtype": "Link", "options": "Branch", "insert_after": "mode_of_payment",
+            "reqd": 1,
+        },
+    ],
+    "Item": [
+        {
+            "fieldname": "custom_is_head_office_only",
+            "label": "Is Head Office Only",
+            "fieldtype": "Check", "insert_after": "cost_price",
+        },
+        {
+            "fieldname": "custom_is_khamis_only",
+            "label": "Is Khamis Only",
+            "fieldtype": "Check",
+            "insert_after": "custom_is_head_office_only",
+        },
+    ],
     "POS Invoice": [
         {
             "fieldname": "custom_branch", "label": "Branch",

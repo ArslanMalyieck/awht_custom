@@ -10,6 +10,10 @@ frappe.ui.form.on('POS Invoice', {
 
     refresh(frm) {
         setup_pos_filters(frm);
+    },
+
+    custom_branch(frm) {
+        setup_pos_filters(frm);
     }
 });
 
@@ -17,8 +21,9 @@ frappe.ui.form.on('POS Invoice', {
    Main Setup (Single Entry Point)
 --------------------------------------------------------*/
 function setup_pos_filters(frm) {
-    get_user_branch_permissions().then(({ branches, is_head_office, is_khamis }) => {
-        apply_item_filter(frm, is_head_office, is_khamis);
+    apply_item_filter(frm);
+
+    get_user_branch_permissions().then(({ branches }) => {
         apply_customer_filter_pos_safe(frm, branches);
     });
 }
@@ -43,19 +48,7 @@ function get_user_branch_permissions() {
     }).then(rows => {
         const branches = rows.map(r => r.for_value);
 
-        const result = {
-            branches,
-
-            // 🏢 Head Office detection
-            is_head_office: branches.some(b =>
-                normalize(b).includes('headoffice')
-            ),
-
-            // 🟡 KHAMIS branches detection
-            is_khamis: branches.some(b =>
-                normalize(b).includes('khamismashit')
-            )
-        };
+        const result = { branches };
 
         _branch_cache = result;
         return result;
@@ -65,31 +58,10 @@ function get_user_branch_permissions() {
 /* -------------------------------------------------------
    Item Visibility Filter (POS SAFE)
 --------------------------------------------------------*/
-function apply_item_filter(frm, is_head_office, is_khamis) {
-    frm.set_query('item_code', 'items', () => {
-
-        // 🔓 Head Office → see everything
-        if (is_head_office) {
-            return {};
-        }
-
-        // 🟡 KHAMIS branches
-        if (is_khamis) {
-            return {
-                filters: {
-                    custom_is_head_office_only: 0
-                }
-            };
-        }
-
-        // 🔒 All other branches
-        return {
-            filters: {
-                custom_is_head_office_only: 0,
-                custom_is_khamis_only: 0
-            }
-        };
-    });
+function apply_item_filter(frm) {
+    frm.set_query('item_code', 'items', () => ({
+        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+    }));
 }
 
 /* -------------------------------------------------------

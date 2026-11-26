@@ -8,6 +8,7 @@ app_license = "MIT"
 required_apps = ["erpnext"]
 
 app_include_js = [
+    "/assets/awht_custom/js/branch_item_visibility.js",
     "/assets/awht_custom/js/cost_visibility.js",
     "/assets/awht_custom/js/branded_report.js",
     "/assets/awht_custom/js/legacy_listview.js",
@@ -42,7 +43,10 @@ doc_events = {
     },
     "Sales Invoice": {
         "before_validate": "awht_custom.credit_control.invoice.map_invoice_branch_warehouse",
-        "validate": "awht_custom.operations.invoice_tax.set_item_tax_display",
+        "validate": [
+            "awht_custom.operations.invoice_tax.set_item_tax_display",
+            "awht_custom.operations.invoice_accounts.set_branch_item_expense_account",
+        ],
         "onload": "awht_custom.operations.invoice_tax.set_item_tax_display",
     },
     "Stock Reconciliation": {

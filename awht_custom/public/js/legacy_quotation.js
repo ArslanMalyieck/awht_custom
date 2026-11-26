@@ -91,6 +91,7 @@ function init(frm) {
 
             set_default_branch(frm, res.branches);
 
+            apply_item_filter(frm);
             apply_customer_filter(frm);
 
             setTimeout(() => {
@@ -132,6 +133,7 @@ function handle_branch_change(frm) {
 
     resolve_warehouse(frm);
 
+    apply_item_filter(frm);
     apply_customer_filter(frm);
 
     setTimeout(() => {
@@ -212,6 +214,18 @@ function set_default_branch(frm, branches) {
     );
 
     if (ho) frm.set_value('custom_branch', ho);
+}
+
+
+/* =========================================================
+   ITEM VISIBILITY FILTER
+=========================================================*/
+
+function apply_item_filter(frm) {
+
+    frm.set_query('item_code', 'items', () => ({
+        filters: awht_custom_item_branch_filters(frm.doc.custom_branch)
+    }));
 }
 
 
