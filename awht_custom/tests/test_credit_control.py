@@ -918,8 +918,11 @@ class TestCreditControl(unittest.TestCase):
             Record(warehouse="WH1", stock_value=-80),
             Record(warehouse="WH1", stock_value=70),
         ]
+        _, data = self.financial.execute({"company": "C1"})
+        self.assertEqual(data[0]["stock_value"], 0)
+
         with self.assertRaisesRegex(ValidationError, "Negative stock value"):
-            self.financial.execute({"company": "C1"})
+            self.financial.get_stock_values("C1", {"B1": ["WH1"]})
 
     def test_reports_fail_on_pending_pos_or_non_sar_financials(self):
         self.db.pending_pos.add("C1")

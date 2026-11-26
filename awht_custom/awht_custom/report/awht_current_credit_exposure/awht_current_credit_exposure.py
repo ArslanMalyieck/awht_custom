@@ -19,7 +19,7 @@ def execute(filters=None):
     require_credit_fields()
     require_sar_company(company)
     ensure_no_pending_pos(company)
-    stock = get_stock_values(company, visible)
+    stock = get_stock_values(company, visible, strict=False)
     unpaid = get_unpaid_invoices(company, mappings, visible)
 
     data = []

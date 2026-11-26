@@ -48,7 +48,7 @@ def ensure_no_pending_pos(company, *, for_update=False):
         frappe.throw(_("Consolidate pending POS Invoices before calculating branch exposure."))
 
 
-def get_stock_values(company, mappings, *, for_update=False):
+def get_stock_values(company, mappings, *, for_update=False, strict=True):
     warehouses = {warehouse: branch for branch, names in mappings.items() for warehouse in names}
     totals = {branch: Decimal(0) for branch in mappings}
     if not warehouses:
@@ -70,7 +70,9 @@ def get_stock_values(company, mappings, *, for_update=False):
 
     for warehouse, value in warehouse_totals.items():
         if value < 0:
-            frappe.throw(_("Negative stock value in a mapped warehouse; exposure is unavailable."))
+            if strict:
+                frappe.throw(_("Negative stock value in a mapped warehouse; exposure is unavailable."))
+            value = Decimal(0)
         totals[warehouses[warehouse]] += value
     return totals
 
