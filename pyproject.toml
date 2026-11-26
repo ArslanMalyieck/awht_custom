@@ -5,7 +5,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
 authors = [{name = "Arslan", email = "malikarsaln000009@gmail.com"}]
-dependencies = []
+dependencies = [
+    "nh3>=0.3.0",
+]
 
 [build-system]
 requires = ["flit_core>=3.4,<4"]
