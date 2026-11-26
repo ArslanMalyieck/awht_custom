@@ -23,7 +23,6 @@
 			report_types.has(doc.report_type) &&
 			doc.ref_doctype &&
 			!doc.disabled &&
-			!doc.prepared_report &&
 			frappe.model.can_get_report(doc.ref_doctype) &&
 			frappe.model.can_print(doc.ref_doctype)
 		);

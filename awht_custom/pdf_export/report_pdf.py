@@ -74,14 +74,11 @@ def _authorized_report(report_name):
     ):
         frappe.throw("Branded PDF is not available for this report", frappe.PermissionError)
 
-    if cint(report.prepared_report):
-        frappe.throw("Prepared reports cannot be synchronously exported", frappe.ValidationError)
     if report.report_type == "Custom Report":
         reference = get_report_doc(report_name)
         if (reference.report_type not in ("Query Report", "Script Report")
-                or reference.ref_doctype != report.ref_doctype
-                or cint(reference.prepared_report)):
-            frappe.throw("Unsupported or prepared reference report", frappe.ValidationError)
+                or reference.ref_doctype != report.ref_doctype):
+            frappe.throw("Unsupported reference report", frappe.ValidationError)
     return report
 
 
@@ -547,6 +544,28 @@ def _render_report_pdf(
     frappe.local.response.type = "download"
 
 
+def _prepared_report_result(report, filters):
+    from frappe.core.doctype.prepared_report.prepared_report import get_completed_prepared_report
+
+    report_key = report.get("custom_report") or report.get("report_name") or report.name
+    prepared_name = get_completed_prepared_report(filters, frappe.session.user, report_key)
+    if not prepared_name:
+        return None
+
+    doc = frappe.get_doc("Prepared Report", prepared_name)
+    if not frappe.has_permission("Prepared Report", "read", doc=doc):
+        frappe.throw("No permission to read the prepared report", frappe.PermissionError)
+    raw = doc.get_prepared_data()
+    try:
+        data = json.loads(raw)
+    except (AttributeError, TypeError, UnicodeError, ValueError):
+        frappe.throw("Prepared report data is unavailable", frappe.ValidationError)
+    if (not isinstance(data, dict) or not isinstance(data.get("columns"), list)
+            or not isinstance(data.get("result"), list)):
+        frappe.throw("Prepared report data is invalid", frappe.ValidationError)
+    return data
+
+
 @frappe.whitelist(methods=["POST"])
 def download_report_pdf(
     report_name, filters=None, only_fields=None, orientation="Landscape", letter_head=None,
@@ -559,16 +578,32 @@ def download_report_pdf(
     filters = _parse_filters(filters)
     _validate_link_filters(filters, report)
 
-    # This import must fail closed if Cost Visibility has not been deployed.
-    from awht_custom.visibility import report_filter
+    prepared = _prepared_report_result(report, filters) if cint(report.prepared_report) else None
+    if prepared:
+        columns = prepared["columns"]
+        rows = prepared["result"]
+        has_total_row = bool(report.add_total_row)
+    else:
+        # This import must fail closed if Cost Visibility has not been deployed.
+        from awht_custom.visibility import report_filter
 
-    result = report_filter.run(report_name, filters=filters, are_default_filters=False)
-    if not isinstance(result, dict) or result.get("prepared_report"):
-        frappe.throw("Prepared or invalid report result", frappe.ValidationError)
+        if cint(report.prepared_report):
+            result = report_filter.run(
+                report_name, filters=filters, are_default_filters=False,
+                ignore_prepared_report=True,
+            )
+        else:
+            result = report_filter.run(report_name, filters=filters, are_default_filters=False)
+        if not isinstance(result, dict) or result.get("prepared_report"):
+            frappe.throw("Prepared or invalid report result", frappe.ValidationError)
+        columns = result.get("columns")
+        rows = result.get("result")
+        has_total_row = bool(result.get("add_total_row"))
+
     _render_report_pdf(
-        report_name, result.get("columns"), result.get("result"), filters,
+        report_name, columns, rows, filters,
         only_fields=only_fields, orientation=orientation, letter_head=letter_head,
         words_column=words_column, words_mode=words_mode,
-        has_total_row=bool(result.get("add_total_row")), doctype=report.ref_doctype,
+        has_total_row=has_total_row, doctype=report.ref_doctype,
         display_filters=[(key.replace("_", " ").title(), value) for key, value in filters.items()],
     )

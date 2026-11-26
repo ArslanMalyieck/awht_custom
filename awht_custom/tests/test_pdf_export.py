@@ -34,6 +34,13 @@ class TestBrandedReportPDF(unittest.TestCase):
             prepared_report=0, filters=[], is_permitted=lambda: self.roles_allowed,
         )
         self.letter_head = frappe._dict(content="<b>Test brand</b>", footer="", disabled=0)
+        self.prepared_report = frappe._dict(
+            report_name="General Ledger",
+            get_prepared_data=lambda: json.dumps({
+                "columns": [{"label": "Entry", "fieldname": "entry", "fieldtype": "Data"}],
+                "result": [{"entry": "prepared"}],
+            }).encode(),
+        )
         self.file_doc = None
         self.permissions = {}
         self.result = {
@@ -85,6 +92,8 @@ class TestBrandedReportPDF(unittest.TestCase):
             return self.letter_head
         if doctype == "File":
             return self.file_doc
+        if doctype == "Prepared Report":
+            return self.prepared_report
         raise AssertionError(f"Unexpected document: {doctype} {name}")
 
     def _has_permission(self, doctype, ptype, doc=None):
@@ -435,12 +444,15 @@ class TestBrandedReportPDF(unittest.TestCase):
             self.export()
         self.get_pdf.assert_not_called()
 
-    def test_prepared_reports_and_oversized_results_cannot_generate_a_pdf(self):
+    def test_prepared_reports_use_ready_data_and_oversized_results_are_rejected(self):
         self.report.prepared_report = 1
-        with self.assertRaises(frappe.ValidationError):
-            self.export()
-        self.assertFalse(pdf.can_download_report_pdf("General Ledger"))
+        html = self.export()
+        self.assertTrue(pdf.can_download_report_pdf("General Ledger"))
+        self.assertIn("prepared", html)
         self.runner.assert_not_called()
+        self.get_pdf.assert_called_once()
+        self.access_log.assert_called_once()
+
         self.report.prepared_report = 0
         self.runner.return_value = {**self.result, "prepared_report": True}
         with self.assertRaises(frappe.ValidationError):
@@ -451,8 +463,6 @@ class TestBrandedReportPDF(unittest.TestCase):
         self.runner.return_value = {**self.result, "columns": self.result["columns"] * (pdf.MAX_COLUMNS + 1)}
         with self.assertRaises(frappe.ValidationError):
             self.export()
-        self.get_pdf.assert_not_called()
-        self.access_log.assert_not_called()
 
     def test_bad_filters_and_orientation_are_rejected_before_report_run(self):
         for filters in ({"company": "x" * 257}, {"company": {"__bad__": "value"}},
